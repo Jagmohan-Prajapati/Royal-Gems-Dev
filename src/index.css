@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@400;500;600;700&family=Jost:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant SC", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Theme System Colors */
+  --color-primary: #800020; /* Ruby Crimson Burgendy */
+  --color-secondary: #b89742; /* Antique Gold */
+  --color-background: #fdfbf7; /* Deep Ivory Parchment */
+  --color-surface: #fbf8f3;
+  --color-surface-dim: #f5f0e6;
+  --color-surface-bright: #ffffff;
+  --color-surface-parchment: #f9f5ed;
+  --color-on-surface: #1a1a1a;
+  --color-on-surface-variant: #403d39;
+  --color-border-sepia: #d5cbb8;
+  --color-dark-burgundy: #2e000a;
+  --color-error-maroon: #8b0000;
+  --color-success-forest: #14532d;
+}
+
+/* Custom design system defaults */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-display);
+}
+
+/* Rounded sharp corner directive rules */
+* {
+  border-radius: 0px !important;
+}
+
+/* Custom scrollbar matching */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-dim);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-sepia);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Cultural Radial Watermark Backdrop */
+.mandala-bg {
+  background-image: radial-gradient(#b89742 1px, transparent 1px);
+  background-size: 24px 24px;
+}
