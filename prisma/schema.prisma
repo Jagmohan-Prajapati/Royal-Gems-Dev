@@ -7,6 +7,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 enum Role {
   USER
   ADMIN
@@ -25,10 +27,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+// ─── Models ──────────────────────────────────────────────────────────────────
+
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
   password  String
+  name      String?
+  phone     String?
   role      Role      @default(USER)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -40,7 +46,7 @@ model Product {
   id          String      @id @default(uuid())
   name        String
   description String
-  price       Int // price in INR
+  price       Float                     // INR — Float for Paytm decimal compatibility
   images      String[]
   category    String
   stoneType   String
@@ -60,12 +66,14 @@ model Address {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String // e.g. "PRIMARY RESIDENCE", "VACATION HOME"
-  name      String
+  title     String   @default("Home")   // e.g. "Home", "Office", "Vacation Home"
+  fullName  String
   phone     String
-  street    String
+  line1     String
+  line2     String   @default("")
   city      String
-  pincode   String
+  state     String
+  pinCode   String
   country   String   @default("India")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,11 +85,11 @@ model Order {
   userId           String
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   currency         String      @default("INR")
-  amount           Int // total amount in INR
+  amount           Float                         // INR — Float for Paytm decimal compatibility
   status           OrderStatus @default(PENDING)
   isPaid           Boolean     @default(false)
-  paymentId        String? // Paytm Txn ID
-  paymentSignature String? // Paytm checksum or token
+  paymentId        String?                       // Paytm TXNID
+  paymentSignature String?                       // Paytm CHECKSUMHASH
   addressId        String?
   address          Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
   createdAt        DateTime    @default(now())
@@ -96,7 +104,7 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
-  price     Int // historical active price at time of purchase
+  price     Float                               // Historical price at time of purchase
 }
 
 model OtpCode {
