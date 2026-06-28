@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, ShoppingBag, Search, User, X, LayoutDashboard } from 'lucide-react';
 import { useCartStore } from '../store/cartStore.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import SearchModal from './SearchModal.tsx';
+import logoRG from '../assets/logo_RG.png';
 
 export default function Navbar() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { items } = useCartStore();
-  const { user, isAuthenticated, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   const totalCartCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
@@ -19,7 +19,6 @@ export default function Navbar() {
     <>
       <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 shadow-sm transition-all duration-300">
         <div className="flex items-center px-gutter py-stack-md max-w-container-max mx-auto h-20 relative">
-
           {/* LEFT: Hamburger — mobile only */}
           <button
             onClick={toggleDrawer}
@@ -32,11 +31,14 @@ export default function Navbar() {
           {/* BRAND: centered on mobile, left on desktop */}
           <Link
             to="/"
-            className="font-headline-lg text-headline-lg tracking-widest text-primary uppercase select-none transition-transform
-                       absolute left-1/2 -translate-x-1/2
-                       md:static md:left-auto md:translate-x-0 md:mr-auto"
+            className="flex items-center gap-2.5 font-headline-lg text-headline-lg tracking-widest text-primary uppercase select-none active:scale-98 transition-transform absolute left-1/2 -translate-x-1/2 md:static md:left-auto md:translate-x-0 md:mr-auto"
           >
-            Royal Gems
+            <img
+              src={logoRG}
+              alt="Royal Gems logo"
+              className="h-16 w-16 object-contain flex-shrink-0 drop-shadow-sm"
+            />
+            <span>Royal Gems</span>
           </Link>
 
           {/* CENTER: Desktop nav links */}
@@ -69,13 +71,11 @@ export default function Navbar() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border border-secondary/50 bg-secondary/10 text-primary hover:bg-secondary/20 transition-all font-label-caps text-[10px] tracking-widest uppercase"
                 title="Admin Dashboard"
               >
-                <LayoutDashboard className="h-3.5 w-3.5 text-primary" />
-                <span className="font-label-caps text-[9px] tracking-widest uppercase text-primary">
-                  Dashboard
-                </span>
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                Dashboard
               </Link>
             )}
 
@@ -92,7 +92,7 @@ export default function Navbar() {
             <Link
               to={isAdmin ? '/admin' : isAuthenticated ? '/account' : '/login'}
               className={`text-primary hover:scale-95 p-1 transition-transform ${isAuthenticated ? 'text-secondary-fixed-variant' : ''}`}
-              title={isAdmin ? 'Admin Dashboard' : isAuthenticated ? 'My Account' : 'Sign In'}
+              title={isAdmin ? 'Admin Dashboard' : 'My Account'}
             >
               <User className="h-6 w-6" />
             </Link>
@@ -133,9 +133,10 @@ export default function Navbar() {
           <Link
             to="/"
             onClick={toggleDrawer}
-            className="font-headline-md text-headline-md text-secondary-fixed tracking-tighter uppercase"
+            className="flex items-center gap-2 font-headline-md text-headline-md text-secondary-fixed tracking-tighter uppercase"
           >
-            Royal Gems
+            <img src={logoRG} alt="Royal Gems logo" className="h-8 w-8 object-contain flex-shrink-0" />
+            <span>Royal Gems</span>
           </Link>
           <button onClick={toggleDrawer} className="text-secondary-fixed hover:text-white transition-colors p-1">
             <X className="h-6 w-6" />
@@ -143,33 +144,56 @@ export default function Navbar() {
         </div>
 
         <nav className="flex flex-col divide-y divide-border-sepia/20">
-          <Link to="/shop" onClick={toggleDrawer}
-            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
+          <Link
+            to="/shop"
+            onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group"
+          >
             Heritage Collection
-            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">DIAMOND</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">
+              DIAMOND
+            </span>
           </Link>
-          <Link to="/shop?category=Loose+Gemstones" onClick={toggleDrawer}
-            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
+          <Link
+            to="/shop?category=Loose+Gemstones"
+            onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group"
+          >
             Loose Stones
-            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">GEM</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">
+              GEM
+            </span>
           </Link>
-          <Link to="/contact" onClick={toggleDrawer}
-            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
+          <Link
+            to="/contact"
+            onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group"
+          >
             Bespoke Service
-            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">DESIGN</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">
+              DESIGN
+            </span>
           </Link>
-          <Link to="/about" onClick={toggleDrawer}
-            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
+          <Link
+            to="/about"
+            onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group"
+          >
             Our Legacy
-            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">HISTORY</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">
+              HISTORY
+            </span>
           </Link>
-
-          {/* Admin link in drawer — always shown to admin */}
           {isAdmin && (
-            <Link to="/admin" onClick={toggleDrawer}
-              className="py-5 font-label-caps text-label-caps text-secondary-fixed hover:text-white hover:pl-2 transition-all flex justify-between items-center group">
+            <Link
+              to="/admin"
+              onClick={toggleDrawer}
+              className="py-5 font-label-caps text-label-caps text-secondary-fixed-dim hover:text-white hover:pl-2 transition-all flex justify-between items-center group"
+            >
               Admin Dashboard
-              <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">TERMINAL</span>
+              <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">
+                TERMINAL
+              </span>
             </Link>
           )}
         </nav>
