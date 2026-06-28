@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, ShoppingBag, Search, User, X } from 'lucide-react';
+import { Menu, ShoppingBag, Search, User, X, LayoutDashboard } from 'lucide-react';
 import { useCartStore } from '../store/cartStore.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import SearchModal from './SearchModal.tsx';
@@ -17,135 +17,185 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ── Main Navbar Bar ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border-sepia/40 h-26">
-        <div className="max-w-8xl mx-auto px-4 h-full flex items-center justify-between gap-4">
+      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 shadow-sm transition-all duration-300">
+        <div className="flex items-center px-gutter py-stack-md max-w-container-max mx-auto h-20 relative">
 
           {/* LEFT: Hamburger — mobile only */}
           <button
             onClick={toggleDrawer}
-            className="md:hidden text-primary p-1 hover:scale-95 transition-transform flex-shrink-0"
-            aria-label="Open menu"
+            className="md:hidden text-primary hover:text-primary-container p-2 active:scale-95 transition-all flex-shrink-0"
+            aria-label="Toggle Navigation Menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-7 w-7" />
           </button>
 
-          {/* CENTER: Brand name — always centered on mobile, left-aligned on desktop */}
+          {/* BRAND: centered on mobile, left on desktop */}
           <Link
             to="/"
-            className="font-display text-[26px] tracking-[0.12em] text-primary uppercase
+            className="font-headline-lg text-headline-lg tracking-widest text-primary uppercase select-none transition-transform
                        absolute left-1/2 -translate-x-1/2
-                       md:static md:left-auto md:translate-x-0"
+                       md:static md:left-auto md:translate-x-0 md:mr-auto"
           >
             Royal Gems
           </Link>
 
           {/* CENTER: Desktop nav links */}
-          <div className="hidden md:flex items-center gap-12 mx-auto">
-            <Link to="/shop" className="font-label-caps text-[14px] tracking-widest uppercase text-on-surface-variant hover:text-primary transition-colors">
+          <nav className="hidden md:flex gap-8 items-center absolute left-1/2 -translate-x-1/2">
+            <Link
+              to="/shop"
+              className="font-label-caps text-label-caps text-primary border-primary hover:border-b-2 py-1 transition-all"
+            >
               Collection
             </Link>
-            <Link to="/contact" className="font-label-caps text-[14px] tracking-widest uppercase text-on-surface-variant hover:text-primary transition-colors">
-              Contact Us
+            <Link
+              to="/contact"
+              className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary-container transition-colors"
+            >
+              Bespoke
             </Link>
-            <Link to="/about" className="font-label-caps text-[14px] tracking-widest uppercase text-on-surface-variant hover:text-primary transition-colors">
+            <Link
+              to="/about"
+              className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary-container transition-colors"
+            >
               Legacy
             </Link>
-          </div>
+          </nav>
 
           {/* RIGHT: Icon actions */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-4 ml-auto flex-shrink-0">
+            <div className="w-px h-6 bg-outline-variant/30 hidden md:block" />
+
+            {/* Admin Dashboard pill — desktop, admin only */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all"
+                title="Admin Dashboard"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5 text-primary" />
+                <span className="font-label-caps text-[9px] tracking-widest uppercase text-primary">
+                  Dashboard
+                </span>
+              </Link>
+            )}
+
             {/* Search */}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="text-primary hover:scale-95 p-1 transition-transform"
               title="Search Shop"
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-6 w-6" />
             </button>
 
-            {/* Account */}
+            {/* Account / Admin icon */}
             <Link
-              to={isAuthenticated ? '/account' : '/login'}
-              className="text-primary hover:scale-95 p-1 transition-transform"
-              title={isAuthenticated ? 'My Account' : 'Sign In'}
+              to={isAdmin ? '/admin' : isAuthenticated ? '/account' : '/login'}
+              className={`text-primary hover:scale-95 p-1 transition-transform ${isAuthenticated ? 'text-secondary-fixed-variant' : ''}`}
+              title={isAdmin ? 'Admin Dashboard' : isAuthenticated ? 'My Account' : 'Sign In'}
             >
-              <User className="h-5 w-5" />
+              <User className="h-6 w-6" />
             </Link>
 
-            {/* Cart */}
-            <Link to="/cart" className="relative text-primary hover:scale-95 p-1 transition-transform" title="Shopping Bag">
-              <ShoppingBag className="h-5 w-5" />
-              {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold w-4 h-4 flex items-center justify-center leading-none">
-                  {totalCartCount}
-                </span>
-              )}
-            </Link>
+            {/* Cart — hidden for admin */}
+            {!isAdmin && (
+              <Link
+                to="/cart"
+                className="text-primary hover:scale-95 p-1 transition-transform relative"
+                title="Shopping Bag"
+              >
+                <ShoppingBag className="h-6 w-6" />
+                {totalCartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold font-mono">
+                    {totalCartCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ── Drawer Backdrop ── */}
+      {/* Drawer Backdrop */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
-          onClick={() => setIsDrawerOpen(false)}
+          onClick={toggleDrawer}
+          className="fixed inset-0 z-[55] bg-dark-burgundy/40 backdrop-blur-xs transition-opacity"
         />
       )}
 
-      {/* ── Side Drawer ── */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-72 z-50 bg-background border-r border-border-sepia shadow-2xl transform transition-transform duration-300 ease-in-out
-          ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      {/* Side Drawer — slides from RIGHT */}
+      <div
+        className={`h-screen w-80 fixed right-0 top-0 z-[60] bg-dark-burgundy shadow-2xl p-stack-lg flex flex-col transition-transform duration-500 ease-in-out ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border-sepia/40">
-          <span className="font-display text-[18px] tracking-[0.12em] text-primary uppercase">Royal Gems</span>
-          <button onClick={() => setIsDrawerOpen(false)} className="text-on-surface-variant hover:text-primary p-1">
-            <X className="h-5 w-5" />
+        <div className="flex justify-between items-center mb-10">
+          <Link
+            to="/"
+            onClick={toggleDrawer}
+            className="font-headline-md text-headline-md text-secondary-fixed tracking-tighter uppercase"
+          >
+            Royal Gems
+          </Link>
+          <button onClick={toggleDrawer} className="text-secondary-fixed hover:text-white transition-colors p-1">
+            <X className="h-6 w-6" />
           </button>
         </div>
 
-        <nav className="flex flex-col px-6 py-8 gap-6">
-          <Link onClick={() => setIsDrawerOpen(false)} to="/shop" className="flex justify-between items-center font-display text-[16px] tracking-widest text-on-surface uppercase hover:text-primary transition-colors group">
+        <nav className="flex flex-col divide-y divide-border-sepia/20">
+          <Link to="/shop" onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
             Heritage Collection
-            <span className="font-label-caps text-[9px] text-secondary tracking-widest">DIAMOND</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">DIAMOND</span>
           </Link>
-          <Link onClick={() => setIsDrawerOpen(false)} to="/shop?category=Loose+Gemstones" className="flex justify-between items-center font-display text-[16px] tracking-widest text-on-surface uppercase hover:text-primary transition-colors">
+          <Link to="/shop?category=Loose+Gemstones" onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
             Loose Stones
-            <span className="font-label-caps text-[9px] text-secondary tracking-widest">GEM</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">GEM</span>
           </Link>
-          <Link onClick={() => setIsDrawerOpen(false)} to="/contact" className="flex justify-between items-center font-display text-[16px] tracking-widest text-on-surface uppercase hover:text-primary transition-colors">
+          <Link to="/contact" onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
             Bespoke Service
-            <span className="font-label-caps text-[9px] text-secondary tracking-widest">DESIGN</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">DESIGN</span>
           </Link>
-          <Link onClick={() => setIsDrawerOpen(false)} to="/about" className="flex justify-between items-center font-display text-[16px] tracking-widest text-on-surface uppercase hover:text-primary transition-colors">
+          <Link to="/about" onClick={toggleDrawer}
+            className="py-5 font-label-caps text-label-caps text-on-tertiary-container hover:text-secondary-fixed hover:pl-2 transition-all flex justify-between items-center group">
             Our Legacy
-            <span className="font-label-caps text-[9px] text-secondary tracking-widest">HISTORY</span>
+            <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">HISTORY</span>
           </Link>
+
+          {/* Admin link in drawer — always shown to admin */}
           {isAdmin && (
-            <Link onClick={() => setIsDrawerOpen(false)} to="/admin" className="flex justify-between items-center font-display text-[16px] tracking-widest text-primary uppercase hover:opacity-80 transition-colors">
+            <Link to="/admin" onClick={toggleDrawer}
+              className="py-5 font-label-caps text-label-caps text-secondary-fixed hover:text-white hover:pl-2 transition-all flex justify-between items-center group">
               Admin Dashboard
-              <span className="font-label-caps text-[9px] text-secondary tracking-widest">TERMINAL</span>
+              <span className="text-[10px] text-secondary-fixed opacity-0 group-hover:opacity-100 transition-opacity">TERMINAL</span>
             </Link>
           )}
         </nav>
 
-        <div className="absolute bottom-8 left-6 right-6">
-          <Link
-            to="/contact"
-            onClick={() => setIsDrawerOpen(false)}
-            className="block text-center px-6 py-3 border border-secondary text-secondary font-label-caps text-[11px] tracking-widest uppercase hover:bg-secondary hover:text-on-primary transition-all"
-          >
-            Book a Consultation
-          </Link>
+        <div className="mt-auto space-y-4 pt-4 border-t border-border-sepia/20">
+          {isAdmin ? (
+            <Link
+              to="/admin"
+              onClick={toggleDrawer}
+              className="w-full block text-center bg-primary text-on-primary py-3.5 font-label-caps text-label-caps tracking-widest border border-secondary hover:bg-primary-container transition-colors"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/contact"
+              onClick={toggleDrawer}
+              className="w-full block text-center bg-primary text-on-primary py-3.5 font-label-caps text-label-caps tracking-widest border border-secondary hover:bg-primary-container transition-colors"
+            >
+              Book a Consultation
+            </Link>
+          )}
         </div>
-      </aside>
+      </div>
 
-      ── Spacer to offset fixed navbar ──
-      {/* <div className="h-16" /> */}
-
-      {/* ── Search Modal ── */}
+      {/* Live Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
