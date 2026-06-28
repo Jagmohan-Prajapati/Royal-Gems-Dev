@@ -1,62 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar.tsx';
-import { Loader2, DollarSign, Gem, ShoppingCart, Users, Award, ShieldCheck } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Loader2, DollarSign, Gem, ShoppingCart, ShieldCheck } from 'lucide-react';
 import { formatPrice } from '../../lib/utils.ts';
 
+interface Stats {
+  revenue: number;
+  ordersCount: number;
+  productsCount: number;
+}
+
+interface RecentOrder {
+  id: string;
+  createdAt: string;
+  amount: number;
+  isPaid: boolean;
+  status: string;
+}
+
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    revenue: 0,
-    ordersCount: 0,
-    productsCount: 0,
-    usersCount: 8, // fallback
-  });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [stats, setStats] = useState<Stats>({ revenue: 0, ordersCount: 0, productsCount: 0 });
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchAdminStats = async () => {
+      setIsLoading(true);
+      setError('');
       try {
         const [prodRes, ordRes] = await Promise.all([
           fetch('/api/products'),
-          fetch('/api/orders/my') // simplified stats helper
+          fetch('/api/orders'),
         ]);
 
-        let pCount = 0;
+        let productsCount = 0;
         if (prodRes.ok) {
           const pData = await prodRes.json();
-          pCount = pData.products?.length || 0;
+          productsCount = pData.products?.length ?? 0;
         }
 
-        let oCount = 0;
-        let rev = 0;
-        let ords: any[] = [];
+        let ordersCount = 0;
+        let revenue = 0;
+        let orders: RecentOrder[] = [];
+
         if (ordRes.ok) {
           const oData = await ordRes.json();
-          ords = oData.orders || [];
-          oCount = ords.length;
-          rev = ords.reduce((sum, item) => sum + item.amount, 0);
+          orders = oData.orders ?? [];
+          ordersCount = orders.length;
+          revenue = orders
+            .filter((o) => o.isPaid)
+            .reduce((sum, o) => sum + o.amount, 0);
         }
 
-        // If actual orders is empty due to fresh db, provide nice mock indicators
-        setStats({
-          revenue: rev > 0 ? rev : 14850000,
-          ordersCount: oCount > 0 ? oCount : 12,
-          productsCount: pCount > 0 ? pCount : 8,
-          usersCount: 14
-        });
-
-        if (ords.length > 0) {
-          setRecentOrders(ords.slice(0, 5));
-        } else {
-          setRecentOrders([
-            { id: 'RG-9952', createdAt: new Date().toISOString(), amount: 4250000, isPaid: true },
-            { id: 'RG-9941', createdAt: new Date(Date.now() - 86400000).toISOString(), amount: 1950000, isPaid: true },
-            { id: 'RG-9938', createdAt: new Date(Date.now() - 172800000).toISOString(), amount: 2800000, isPaid: true }
-          ]);
-        }
+        setStats({ revenue, ordersCount, productsCount });
+        setRecentOrders(orders.slice(0, 5));
       } catch (err) {
-        console.error('Failed to aggregate dashboard overview data:', err);
+        console.error('Dashboard fetch error:', err);
+        setError('Unable to load dashboard data. Check your connection.');
       } finally {
         setIsLoading(false);
       }
@@ -65,160 +65,137 @@ export default function Dashboard() {
     fetchAdminStats();
   }, []);
 
-  // Performance graph data
-  const chartData = [
-    { month: 'Jan', Sales: 3400000 },
-    { month: 'Feb', Sales: 5200000 },
-    { month: 'Mar', Sales: 8900000 },
-    { month: 'Apr', Sales: 11400000 },
-    { month: 'May', Sales: 13500000 },
-    { month: 'Jun', Sales: stats.revenue }
+  const kpiCards = [
+    { label: 'Total Revenue (Paid)', value: formatPrice(stats.revenue), icon: DollarSign, sub: 'From confirmed orders' },
+    { label: 'Total Orders', value: String(stats.ordersCount), icon: ShoppingCart, sub: 'All time' },
+    { label: 'Active Listings', value: String(stats.productsCount), icon: Gem, sub: 'Vault specimens' },
   ];
 
+  const statusColor: Record<string, string> = {
+    PENDING: 'text-amber-600 bg-amber-50 border-amber-200',
+    PROCESSING: 'text-blue-700 bg-blue-50 border-blue-200',
+    SHIPPED: 'text-indigo-700 bg-indigo-50 border-indigo-200',
+    DELIVERED: 'text-green-700 bg-green-50 border-green-200',
+    CANCELLED: 'text-red-700 bg-red-50 border-red-200',
+  };
+
   return (
-    <div className="bg-surface-bright min-h-screen text-on-surface flex select-none">
+    <div className="min-h-screen flex bg-background">
       <AdminSidebar />
 
-      {/* Main Panel Content block */}
-      <main className="flex-1 pl-76 pr-8 py-10 select-text overflow-x-hidden min-h-screen">
-        
-        {/* Header Title block */}
-        <header className="mb-10 flex flex-wrap justify-between items-center gap-4">
+      <main className="flex-1 overflow-auto px-8 py-10">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-10">
           <div>
-            <h1 className="font-headline-lg text-headline-lg text-primary uppercase">
+            <h1 className="font-display text-3xl text-on-surface uppercase tracking-widest mb-1">
               Atelier Overview
             </h1>
-            <p className="font-body-md text-text-muted mt-1">
-              Curate inventory metrics, check sales logs, and verify certificate registries.
+            <p className="font-body text-[13px] text-on-surface-variant">
+              Live metrics drawn from the database. Refresh to update.
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-success-forest/10 border border-success-forest/30 px-4 py-2 text-success-forest font-label-caps text-[11px] font-bold">
-            <ShieldCheck className="h-4.5 w-4.5" /> SECURE SESSION ACTIVE
+          <div className="flex items-center gap-2 px-4 py-2 bg-success-forest/10 border border-success-forest/30">
+            <ShieldCheck className="h-4 w-4 text-success-forest" />
+            <span className="font-label-caps text-[9px] tracking-widest text-success-forest uppercase">
+              Secure Session Active
+            </span>
           </div>
-        </header>
+        </div>
+
+        {error && (
+          <div className="mb-8 p-4 bg-error/10 border border-error/30 font-body text-[13px] text-error">
+            {error}
+          </div>
+        )}
 
         {isLoading ? (
-          <div className="min-h-[400px] flex justify-center items-center">
-            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <div className="flex items-center justify-center h-64 gap-3 text-on-surface-variant">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="font-label-caps text-[11px] tracking-widest uppercase">Loading Vault Data…</span>
           </div>
         ) : (
-          <div className="space-y-10">
-            {/* KPI Cards Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              
-              {/* Card 1: Total Revenue */}
-              <div className="bg-surface-parchment p-6 border border-border-sepia shadow-xs relative overflow-hidden">
-                <DollarSign className="absolute right-4 top-4 h-12 w-12 text-primary opacity-5" />
-                <p className="font-label-caps text-[10px] text-text-muted tracking-wider uppercase font-semibold">TOTAL SECURED REVENUE</p>
-                <p className="font-headline-md text-headline-md text-primary font-mono mt-4 font-bold">{formatPrice(stats.revenue)}</p>
-              </div>
-
-              {/* Card 2: Total Gemstone Orders */}
-              <div className="bg-surface-parchment p-6 border border-border-sepia shadow-xs relative overflow-hidden">
-                <ShoppingCart className="absolute right-4 top-4 h-12 w-12 text-primary opacity-5" />
-                <p className="font-label-caps text-[10px] text-text-muted tracking-wider uppercase font-semibold">ACQUISITIONS REGISTERED</p>
-                <p className="font-headline-md text-headline-md text-primary font-mono mt-4 font-bold">{stats.ordersCount}</p>
-              </div>
-
-              {/* Card 3: Collection Items Count */}
-              <div className="bg-surface-parchment p-6 border border-border-sepia shadow-xs relative overflow-hidden">
-                <Gem className="absolute right-4 top-4 h-12 w-12 text-primary opacity-5" />
-                <p className="font-label-caps text-[10px] text-text-muted tracking-wider uppercase font-semibold">ACTIVE VAULT SPECIMENS</p>
-                <p className="font-headline-md text-headline-md text-primary font-mono mt-4 font-bold">{stats.productsCount}</p>
-              </div>
-
-              {/* Card 4: Active Patrons Count */}
-              <div className="bg-surface-parchment p-6 border border-border-sepia shadow-xs relative overflow-hidden">
-                <Users className="absolute right-4 top-4 h-12 w-12 text-primary opacity-5" />
-                <p className="font-label-caps text-[10px] text-text-muted tracking-wider uppercase font-semibold">VERIFIED PATRONS</p>
-                <p className="font-headline-md text-headline-md text-primary font-mono mt-4 font-bold">{stats.usersCount}</p>
-              </div>
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+              {kpiCards.map(({ label, value, icon: Icon, sub }) => (
+                <div key={label} className="bg-surface border border-border-sepia/40 p-6 flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-label-caps text-[9px] tracking-widest text-on-surface-variant uppercase mb-1">{label}</p>
+                    <p className="font-display text-2xl text-on-surface tracking-wide">{value}</p>
+                    <p className="font-body text-[11px] text-on-surface-variant mt-0.5">{sub}</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* Performance Graph */}
-            <section className="bg-surface-parchment p-8 border border-border-sepia">
-              <h3 className="font-headline-sm text-headline-sm text-primary mb-6 uppercase tracking-wider">
-                Sales Velocity Trend (INR)
-              </h3>
-              <div className="h-80 select-none">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#800020" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#800020" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="month" stroke="#1c1c1c" fontSize={11} opacity={0.7} />
-                    <YAxis stroke="#1c1c1c" fontSize={11} opacity={0.7} tickFormatter={(v) => `₹${v/100000}L`} />
-                    <Tooltip formatter={(value: any) => formatPrice(value)} />
-                    <Area type="monotone" dataKey="Sales" stroke="#800020" strokeWidth={2} fillOpacity={1} fill="url(#salesGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+            {/* Recent Orders */}
+            <div className="bg-surface border border-border-sepia/40">
+              <div className="px-6 py-5 border-b border-border-sepia/30 flex items-center justify-between">
+                <h2 className="font-display text-lg text-on-surface uppercase tracking-widest">Recent Orders</h2>
+                <a href="/admin/orders" className="font-label-caps text-[10px] tracking-widest text-primary hover:underline uppercase">
+                  View All →
+                </a>
               </div>
-            </section>
 
-            {/* Bottom layout: Recent Orders log */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-8 bg-surface-parchment p-6 border border-border-sepia">
-                <h3 className="font-headline-sm text-headline-sm text-primary mb-6 uppercase tracking-wider">
-                  Recent Ledger Entries
-                </h3>
+              {recentOrders.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                  <ShoppingCart className="h-8 w-8 text-on-surface-variant/30 mx-auto mb-3" />
+                  <p className="font-body text-[14px] text-on-surface-variant">No orders have been placed yet.</p>
+                  <p className="font-body text-[12px] text-on-surface-variant/60 mt-1">Orders will appear here once customers complete a purchase.</p>
+                </div>
+              ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-[13px]">
+                  <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border-sepia/25 font-label-caps text-[10px] text-text-muted tracking-wide pb-2 uppercase">
-                        <th className="py-3">ORDER ID</th>
-                        <th className="py-3">DATE</th>
-                        <th className="py-3">Status</th>
-                        <th className="py-3 text-right">TOTAL</th>
+                      <tr className="border-b border-border-sepia/20">
+                        {['Order ID', 'Date', 'Amount', 'Payment', 'Status'].map((h) => (
+                          <th key={h} className="px-6 py-3 text-left font-label-caps text-[9px] tracking-widest text-on-surface-variant uppercase">{h}</th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-sepia/10">
+                    <tbody className="divide-y divide-border-sepia/20">
                       {recentOrders.map((ord) => (
-                        <tr key={ord.id} className="hover:bg-white/30 transition-colors">
-                          <td className="py-4 font-semibold text-primary font-mono">{ord.id}</td>
-                          <td className="py-4 text-text-muted font-mono">{new Date(ord.createdAt).toLocaleDateString()}</td>
-                          <td className="py-4">
-                            <span className="inline-block px-2.5 py-0.5 font-label-caps text-[9px] tracking-widest border font-bold uppercase bg-success-forest/10 text-success-forest border-success-forest/20">
-                              PAID via Paytm
+                        <tr key={ord.id} className="hover:bg-surface-parchment transition-colors">
+                          <td className="px-6 py-4 font-mono text-[12px] text-on-surface">{ord.id.slice(0, 8).toUpperCase()}</td>
+                          <td className="px-6 py-4 font-body text-[13px] text-on-surface-variant">
+                            {new Date(ord.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 font-body text-[13px] text-on-surface font-semibold">{formatPrice(ord.amount)}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-block px-2 py-0.5 border font-label-caps text-[9px] tracking-widest uppercase ${ord.isPaid ? 'text-green-700 bg-green-50 border-green-200' : 'text-amber-600 bg-amber-50 border-amber-200'}`}>
+                              {ord.isPaid ? 'Paid' : 'Pending'}
                             </span>
                           </td>
-                          <td className="py-4 font-semibold text-primary text-right font-mono">{formatPrice(ord.amount)}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-block px-2 py-0.5 border font-label-caps text-[9px] tracking-widest uppercase ${statusColor[ord.status] ?? 'text-on-surface-variant bg-surface border-border-sepia'}`}>
+                              {ord.status}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-              {/* Admin quick shortcuts tips box */}
-              <div className="lg:col-span-4 bg-dark-burgundy/5 p-6 border border-border-sepia flex flex-col justify-between">
-                <div>
-                  <h4 className="font-headline-sm text-[18px] text-primary mb-4 uppercase">
-                    Curator Guidelines
-                  </h4>
-                  <ul className="space-y-4 text-[13px] font-body-sm text-on-surface-variant leading-relaxed">
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-mono text-[11px] flex-shrink-0 mt-0.5">1</span>
-                      <span>Product catalog additions trigger Cloudinary metadata registration immediately.</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-mono text-[11px] flex-shrink-0 mt-0.5">2</span>
-                      <span>Never upload uncertified raw cut specimens without registering GIA security seals.</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="bg-primary/5 p-4 border border-primary/10 mt-6 flex items-center gap-3">
-                  <Award className="h-8 w-8 text-secondary flex-shrink-0" />
-                  <p className="font-label-caps text-[9px] font-bold tracking-wider uppercase text-primary leading-tight">
-                    TRUSTED HERITAGE VAULT ACCESS CONTROL
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
-          </div>
+
+            {/* Curator Guidelines */}
+            <div className="mt-8 bg-surface-parchment border border-border-sepia/40 px-6 py-5">
+              <h3 className="font-display text-[14px] text-on-surface uppercase tracking-widest mb-3">Curator Guidelines</h3>
+              <ol className="space-y-2 list-decimal list-inside">
+                {[
+                  'Product additions trigger Cloudinary metadata registration immediately.',
+                  'Never upload uncertified specimens without registering GIA security seals.',
+                  'Order status changes are permanent and visible to the customer instantly.',
+                ].map((note, i) => (
+                  <li key={i} className="font-body text-[13px] text-on-surface-variant leading-relaxed">{note}</li>
+                ))}
+              </ol>
+            </div>
+          </>
         )}
       </main>
     </div>

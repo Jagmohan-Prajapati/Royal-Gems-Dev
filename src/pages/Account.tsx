@@ -22,7 +22,7 @@ export default function Account() {
   // Forms state
   const [profileEmail, setLoginEmail] = useState(user?.email || '');
   const [profileSuccessMsg, setProfileSuccessMsg] = useState('');
-  
+
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
@@ -181,11 +181,11 @@ export default function Account() {
 
       <main className="pt-32 pb-20 min-h-screen">
         <div className="max-w-container-max mx-auto px-4 md:px-gutter grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          
+
           {/* Left Sidebar */}
           <aside className="md:col-span-3 space-y-6">
             <div className="bg-surface-parchment p-8 border border-border-sepia shadow-sm select-text text-center">
-              
+
               {/* Arjun Malhotra approved luxury photo */}
               <div className="w-20 h-20 mx-auto mb-4 border-2 border-secondary p-1 overflow-hidden select-none">
                 <img
@@ -207,44 +207,40 @@ export default function Account() {
               <nav className="space-y-1 mt-8 select-none">
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${
-                    activeTab === 'orders'
+                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${activeTab === 'orders'
                       ? 'bg-primary-container/10 text-primary border-primary'
                       : 'text-text-muted hover:text-primary hover:bg-primary-container/5 border-transparent'
-                  }`}
+                    }`}
                 >
                   <ListOrdered className="h-4.5 w-4.5 text-primary" />
                   <span>My Orders</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${
-                    activeTab === 'profile'
+                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${activeTab === 'profile'
                       ? 'bg-primary-container/10 text-primary border-primary'
                       : 'text-text-muted hover:text-primary hover:bg-primary-container/5 border-transparent'
-                  }`}
+                    }`}
                 >
                   <UserIcon className="h-4.5 w-4.5 text-primary" />
                   <span>Profile Details</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('addresses')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${
-                    activeTab === 'addresses'
+                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${activeTab === 'addresses'
                       ? 'bg-primary-container/10 text-primary border-primary'
                       : 'text-text-muted hover:text-primary hover:bg-primary-container/5 border-transparent'
-                  }`}
+                    }`}
                 >
                   <MapPin className="h-4.5 w-4.5 text-primary" />
                   <span>Addresses</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('security')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${
-                    activeTab === 'security'
+                  className={`w-full flex items-center gap-3 px-4 py-3 font-label-caps text-label-caps transition-all text-left border-l-2 font-bold text-[11px] uppercase ${activeTab === 'security'
                       ? 'bg-primary-container/10 text-primary border-primary'
                       : 'text-text-muted hover:text-primary hover:bg-primary-container/5 border-transparent'
-                  }`}
+                    }`}
                 >
                   <Key className="h-4.5 w-4.5 text-primary" />
                   <span>Security</span>
@@ -261,31 +257,6 @@ export default function Account() {
                 </div>
               </nav>
             </div>
-
-            {/* Loyalty rewards status points card */}
-            <div className="bg-dark-burgundy p-6 md:p-8 text-secondary-fixed shadow-2xl relative overflow-hidden select-text text-left">
-              <div className="absolute -right-8 -bottom-8 opacity-10">
-                <Star className="h-32 w-32 text-secondary-fixed" />
-              </div>
-              <p className="font-label-caps text-[9px] tracking-widest mb-1 opacity-60 font-semibold uppercase">
-                ROYAL GEMS COLLECTIVE
-              </p>
-              <h3 className="font-headline-sm text-headline-sm mb-6 text-secondary-fixed font-medium uppercase">
-                Loyalty Rewards
-              </h3>
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between text-[11px] font-label-caps uppercase font-bold tracking-wider">
-                  <span>TIER PROGRESS</span>
-                  <span>8,400 / 10,000 PTS</span>
-                </div>
-                <div className="w-full h-1 bg-white/10 overflow-hidden">
-                  <div className="h-full bg-secondary-fixed-dim" style={{ width: '84%' }} />
-                </div>
-              </div>
-              <p className="text-[11px] font-body-sm text-surface-variant/80 italic leading-relaxed">
-                Enjoy complimentary shipping on all selections under Platinum membership tiers.
-              </p>
-            </div>
           </aside>
 
           {/* Right Main Content area */}
@@ -296,7 +267,7 @@ export default function Account() {
               </div>
             ) : (
               <div>
-                
+
                 {/* 1. ORDERS VIEW */}
                 {activeTab === 'orders' && (
                   <div className="space-y-6">
@@ -327,11 +298,10 @@ export default function Account() {
                                 <td className="px-6 py-6 font-semibold text-primary font-mono">{ord.id}</td>
                                 <td className="px-6 py-6 font-mono text-[13px]">{new Date(ord.createdAt).toLocaleDateString()}</td>
                                 <td className="px-6 py-6">
-                                  <span className={`inline-block px-3 py-1 font-label-caps text-[10px] tracking-widest border font-bold uppercase ${
-                                    ord.isPaid
+                                  <span className={`inline-block px-3 py-1 font-label-caps text-[10px] tracking-widest border font-bold uppercase ${ord.isPaid
                                       ? 'bg-success-forest/10 text-success-forest border-success-forest/30'
                                       : 'bg-secondary-container/20 text-secondary border-secondary-container/30'
-                                  }`}>
+                                    }`}>
                                     {ord.isPaid ? 'PAID / PROCESSING' : 'PENDING'}
                                   </span>
                                 </td>
