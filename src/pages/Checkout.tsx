@@ -16,6 +16,7 @@ export default function Checkout() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>('');
 
   // Address creation form panel state
   const [isAddingAddress, setIsAddingAddress] = useState(false);
@@ -35,7 +36,7 @@ export default function Checkout() {
       const res = await fetch('/api/user/addresses');
       if (res.ok) {
         const data = await res.json();
-        const saved = data.addresses || [];
+        const saved = data.addresses || data || [];
         setAddresses(saved);
         if (saved.length > 0 && !selectedAddressId) {
           setSelectedAddressId(saved[0].id);
@@ -52,10 +53,12 @@ export default function Checkout() {
       return;
     }
     fetchAddresses();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   const handleAddNewAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCheckoutError('');
+
     if (!newAddress.name || !newAddress.street || !newAddress.city || !newAddress.pincode) {
       alert('Please fill out all address details.');
       return;
@@ -65,7 +68,17 @@ export default function Checkout() {
       const res = await fetch('/api/user/addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAddress),
+        body: JSON.stringify({
+          title: newAddress.title,
+          fullName: newAddress.name,
+          phone: newAddress.phone,
+          line1: newAddress.street,
+          line2: '',
+          city: newAddress.city,
+          state: '',
+          pinCode: newAddress.pincode,
+          country: newAddress.country,
+        }),
       });
       if (res.ok) {
         setNewAddress({
@@ -82,6 +95,7 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error(err);
+      setCheckoutError('Unable to save address. Please try again.');
     }
   };
 
@@ -95,53 +109,51 @@ export default function Checkout() {
       return;
     }
 
+    setCheckoutError('');
     setIsPaying(true);
 
     try {
-      // 1. Create order
+      // 1. Create order (no real Paytm, server may respond 503)
       const createRes = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+          items: items.map(i => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            price: i.price
+          })),
           addressId: selectedAddressId,
           totalAmount: total()
         }),
       });
 
+      const data = await createRes.json().catch(() => ({}));
+
       if (!createRes.ok) {
-        const data = await createRes.json();
-        throw new Error(data.error || 'Failed to initialize collection order');
+        if (createRes.status === 503) {
+          // Checkout temporarily unavailable – show branded apology
+          setCheckoutError(
+            data.message ||
+            'Online checkout is temporarily unavailable. Please contact us at royalgemskolkata@gmail.com or visit our Kolkata studio to complete your purchase.'
+          );
+        } else {
+          setCheckoutError(data.error || 'Failed to initialize collection order.');
+        }
+        setIsPaying(false);
+        return;
       }
 
-      const orderData = await createRes.json();
-      const orderId = orderData.orderId;
+      const orderId = data.orderId;
 
-      // 2. Simulate complete staging Paytm callback verification handshake securely
-      const verifyRes = await fetch('/api/orders/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          status: 'TXN_SUCCESS',
-          isPaid: true,
-          TXNAMOUNT: total()
-        })
-      });
-
-      if (verifyRes.ok) {
-        // Clear Cart
-        clearCart();
-        // Redirect
-        setTimeout(() => {
-          setIsPaying(false);
-          navigate(`/order-confirmation/${orderId}`);
-        }, 1500);
-      } else {
-        throw new Error('Transaction confirmation from Paytm failed');
-      }
+      // 2. No Paytm verify call – treat order as recorded, awaiting payment
+      clearCart();
+      setTimeout(() => {
+        setIsPaying(false);
+        navigate(`/order-confirmation/${orderId}`);
+      }, 1200);
     } catch (err) {
-      alert((err as Error).message || 'Checkout failed');
+      setCheckoutError((err as Error).message || 'Checkout failed. Please try again or contact us.');
       setIsPaying(false);
     }
   };
@@ -155,7 +167,10 @@ export default function Checkout() {
           <p className="font-body-md text-text-muted mt-2 mb-8">
             You must choose pieces to secure checkout terms.
           </p>
-          <Link to="/shop" className="bg-primary text-white font-label-caps text-label-caps px-8 py-3 tracking-widest leading-none">
+          <Link
+            to="/shop"
+            className="bg-primary text-white font-label-caps text-label-caps px-8 py-3 tracking-widest leading-none"
+          >
             EXPLORE COLLECTION
           </Link>
         </div>
@@ -172,10 +187,10 @@ export default function Checkout() {
         <div className="fixed inset-0 z-50 bg-dark-burgundy flex flex-col justify-center items-center gap-4 text-surface select-text">
           <Loader2 className="h-12 w-12 text-secondary-fixed animate-spin" />
           <h2 className="font-headline-md text-secondary-fixed text-headline-md uppercase tracking-wider">
-            Securing Payment Connection
+            Securing Order Registry
           </h2>
           <p className="font-body-sm text-[13px] text-surface-variant max-w-sm text-center leading-relaxed">
-            Please wait while Paytm checksum verifies. Your transaction is encrypted with bank-level security.
+            Please wait while we record your acquisition details. Our curators will connect with you to finalize payment.
           </p>
         </div>
       ) : null}
@@ -190,12 +205,29 @@ export default function Checkout() {
           </p>
         </div>
 
+        {/* Global checkout error / apology banner */}
+        {checkoutError && (
+          <div className="mb-8 bg-surface-parchment border border-error/40 px-5 py-4 flex gap-3 items-start">
+            <HelpCircle className="h-5 w-5 text-error mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-label-caps text-[10px] tracking-widest text-error uppercase font-bold">
+                Checkout temporarily unavailable
+              </p>
+              <p className="font-body-sm text-[13px] text-on-surface-variant leading-relaxed">
+                {checkoutError}
+              </p>
+              <p className="font-body-sm text-[12px] text-on-surface-variant mt-2">
+                You can also reach us at <span className="font-mono">royalgemskolkata@gmail.com</span> or visit
+                13/H/29, Mayur Bhanj Road, Kolkata, 700023 to reserve a gemstone.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* 2-Column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          
           {/* Left Panel: Delivery & Payment Details */}
           <div className="lg:col-span-7 space-y-12">
-            
             {/* Delivery address select */}
             <section className="space-y-6">
               <div className="flex items-center space-x-4">
@@ -215,9 +247,8 @@ export default function Checkout() {
                     <div
                       key={address.id}
                       onClick={() => setSelectedAddressId(address.id)}
-                      className={`p-6 bg-surface-parchment relative cursor-pointer border transition-all shadow-xs ${
-                        isCur ? 'border-primary ring-1 ring-primary' : 'border-border-sepia/60 hover:border-secondary'
-                      }`}
+                      className={`p-6 bg-surface-parchment relative cursor-pointer border transition-all shadow-xs ${isCur ? 'border-primary ring-1 ring-primary' : 'border-border-sepia/60 hover:border-secondary'
+                        }`}
                     >
                       {isCur && (
                         <div className="absolute top-4 right-4">
@@ -227,10 +258,14 @@ export default function Checkout() {
                       <p className="font-label-caps text-[10px] text-primary mb-2 font-bold uppercase tracking-wider">
                         {address.title || 'SAVED RESIDENCE'}
                       </p>
-                      <p className="font-body-md font-semibold mb-1 text-[15px]">{address.name}</p>
+                      <p className="font-body-md font-semibold mb-1 text-[15px]">
+                        {address.fullName || address.name}
+                      </p>
                       <p className="font-body-sm text-text-muted leading-relaxed text-[13px]">
-                        {address.street}<br />
-                        {address.city}, {address.pincode}<br />
+                        {address.line1 || address.street}
+                        <br />
+                        {(address.city || '')}, {(address.pinCode || address.pincode || '')}
+                        <br />
                         {address.country || 'India'}
                       </p>
                       <p className="font-body-sm text-text-muted mt-2 text-[12px] font-mono select-all">
@@ -244,18 +279,18 @@ export default function Checkout() {
                 {addresses.length === 0 && (
                   <div
                     onClick={() => {
-                      // Trigger default creation helper payload
                       setAddresses([
                         {
                           id: 'default-sim',
                           title: 'PRIMARY RESIDENCE',
-                          name: user?.email.split('@')[0].toUpperCase() || 'Arjun Malhotra',
-                          street: 'Colaba Causeway, Apollo Bandar',
-                          city: 'Mumbai',
-                          pincode: '400039',
+                          fullName:
+                            user?.email.split('@')[0].toUpperCase() || 'Guest Patron',
+                          line1: '13/H/29, Mayur Bhanj Road',
+                          city: 'Kolkata',
+                          pinCode: '700023',
                           country: 'India',
-                          phone: '+91 22 4556 7788'
-                        }
+                          phone: '+91 98XX XX XXXX',
+                        },
                       ]);
                       setSelectedAddressId('default-sim');
                     }}
@@ -282,7 +317,10 @@ export default function Checkout() {
                 </button>
 
                 {isAddingAddress && (
-                  <form onSubmit={handleAddNewAddress} className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                  <form
+                    onSubmit={handleAddNewAddress}
+                    className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300"
+                  >
                     <div className="space-y-1.5">
                       <label className="font-label-caps text-[10px] text-text-muted uppercase tracking-wider block font-bold">
                         ADDRESSEE NAME
@@ -291,7 +329,9 @@ export default function Checkout() {
                         type="text"
                         required
                         value={newAddress.name}
-                        onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                        onChange={(e) =>
+                          setNewAddress({ ...newAddress, name: e.target.value })
+                        }
                         placeholder="Enter full name"
                         className="w-full bg-white border border-secondary/30 p-3 font-body-md text-[13px] rounded-none focus:ring-1 focus:ring-primary"
                       />
@@ -304,7 +344,9 @@ export default function Checkout() {
                         type="tel"
                         required
                         value={newAddress.phone}
-                        onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                        onChange={(e) =>
+                          setNewAddress({ ...newAddress, phone: e.target.value })
+                        }
                         placeholder="+91"
                         className="w-full bg-white border border-secondary/30 p-3 font-body-md text-[13px] rounded-none focus:ring-1 focus:ring-primary"
                       />
@@ -317,7 +359,9 @@ export default function Checkout() {
                         type="text"
                         required
                         value={newAddress.street}
-                        onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                        onChange={(e) =>
+                          setNewAddress({ ...newAddress, street: e.target.value })
+                        }
                         placeholder="House no, block, street, landmark"
                         className="w-full bg-white border border-secondary/30 p-3 font-body-md text-[13px] rounded-none focus:ring-1 focus:ring-primary"
                       />
@@ -330,7 +374,9 @@ export default function Checkout() {
                         type="text"
                         required
                         value={newAddress.city}
-                        onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                        onChange={(e) =>
+                          setNewAddress({ ...newAddress, city: e.target.value })
+                        }
                         placeholder="Enter City"
                         className="w-full bg-white border border-secondary/30 p-3 font-body-md text-[13px] rounded-none focus:ring-1 focus:ring-primary"
                       />
@@ -343,7 +389,9 @@ export default function Checkout() {
                         type="text"
                         required
                         value={newAddress.pincode}
-                        onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                        onChange={(e) =>
+                          setNewAddress({ ...newAddress, pincode: e.target.value })
+                        }
                         placeholder="6-digit pincode"
                         className="w-full bg-white border border-secondary/30 p-3 font-body-md text-[13px] rounded-none focus:ring-1 focus:ring-primary"
                       />
@@ -383,34 +431,38 @@ export default function Checkout() {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h4 className="font-headline-sm text-[20px] text-primary uppercase">
-                      Paytm Gateway
+                      Paytm Gateway (Coming Soon)
                     </h4>
                     <p className="font-body-sm text-text-muted text-[13px] leading-relaxed">
-                      Instant verification in INR (₹) supporting Cards, NetBanking, and UPI checksums.
+                      Online payment via Paytm is in the process of activation. For now, our team will contact you to complete payment securely.
                     </p>
                   </div>
                   <Shield className="h-8 w-8 text-primary flex-shrink-0" />
                 </div>
 
-                <div className="p-4 bg-white border border-primary/40 flex items-center justify-between group cursor-pointer hover:bg-surface/10 transition-colors">
+                <div className="p-4 bg-white border border-primary/40 flex items-center justify-between group cursor-default">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-primary/5 flex items-center justify-center border border-primary/20">
                       <Shield className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-body-md font-semibold text-[14px]">Pay Secured via Paytm</p>
-                      <p className="font-body-sm text-text-muted text-[12px]">Checksum encryption handles transfer</p>
+                      <p className="font-body-md font-semibold text-[14px]">
+                        Pay Secured via Paytm
+                      </p>
+                      <p className="font-body-sm text-text-muted text-[12px]">
+                        Currently unavailable online. Our concierge will guide you through payment.
+                      </p>
                     </div>
                   </div>
-                  <span className="font-label-caps text-[10px] uppercase text-primary font-bold tracking-widest">
-                    ACTIVE
+                  <span className="font-label-caps text-[10px] uppercase text-text-muted font-bold tracking-widest">
+                    SOON
                   </span>
                 </div>
 
                 <div className="mt-6 flex items-start space-x-3 text-text-muted">
                   <CheckCircle className="h-4.5 w-4.5 text-primary mt-0.5 flex-shrink-0" />
                   <p className="text-[11px] leading-relaxed">
-                    By submitting payment, you agree to terms of certified sourcing. Your credential records are protected by HTTPS transport Layer Sockets.
+                    By placing this order, you reserve the selected gemstones. Our curators will reach out via email or phone to finalize payment using secure channels.
                   </p>
                 </div>
               </div>
@@ -460,7 +512,9 @@ export default function Checkout() {
               <div className="mt-8 space-y-3 font-body-sm text-[13px] select-text">
                 <div className="flex justify-between text-text-muted">
                   <span>Subtotal</span>
-                  <span className="font-mono text-on-surface font-semibold">{formatPrice(subtotal())}</span>
+                  <span className="font-mono text-on-surface font-semibold">
+                    {formatPrice(subtotal())}
+                  </span>
                 </div>
                 <div className="flex justify-between text-text-muted">
                   <span>Insured Courier Delivery</span>
@@ -470,7 +524,9 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-text-muted">
                   <span>GST & Curatorial Taxes</span>
-                  <span className="italic text-[11px] font-label-caps text-on-surface">INCLUDED IN PRICE</span>
+                  <span className="italic text-[11px] font-label-caps text-on-surface">
+                    INCLUDED IN PRICE
+                  </span>
                 </div>
 
                 {/* Double Rule line */}
