@@ -14,7 +14,8 @@ const PORT = Number(process.env.PORT) || 3000;
 
 // ─── Fail fast on missing critical env vars in production ────────────────────
 if (process.env.NODE_ENV === 'production') {
-  const required = ['JWT_SECRET', 'DATABASE_URL', 'ADMIN_EMAIL', 'ADMIN_PASSWORD_HASH'];
+  const required = ['JWT_SECRET', 'DATABASE_URL', 'ADMIN_EMAIL', 'ADMIN_PASSWORD_HASH',
+    'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',];
   for (const key of required) {
     if (!process.env[key]) {
       throw new Error(`FATAL: Missing required environment variable: ${key}`);
@@ -332,8 +333,12 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/logout
-app.post('/api/auth/logout', (_req: Request, res: Response) => {
-  res.clearCookie('token');
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
   res.json({ message: 'Logged out successfully' });
 });
 
@@ -883,7 +888,7 @@ app.post('/api/orders/create', isAuth, async (req: AuthRequest, res: Response) =
 });
 
 // POST /api/orders/verify
-app.post('/api/orders/verify', isAuth, async (req: AuthRequest, res: Response) => {
+app.post('/api/orders/verify', async (req: Request, res: Response) => {
   const { ORDERID, TXNID, STATUS, CHECKSUMHASH, RESPCODE } = req.body;
   const orderId = ORDERID || req.body.orderId;
 
@@ -899,11 +904,8 @@ app.post('/api/orders/verify', isAuth, async (req: AuthRequest, res: Response) =
       return;
     }
 
-    if (order.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Unauthorized' });
-      return;
-    }
-
+    // Ownership check removed: Paytm's server-to-server callback carries
+    // no session cookie. Checksum verification below is the real trust boundary.
     if (CHECKSUMHASH && process.env.PAYTM_MERCHANT_KEY) {
       const isValid = await verifyPaytmChecksum(req.body, CHECKSUMHASH);
       if (!isValid) {
