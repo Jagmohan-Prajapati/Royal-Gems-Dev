@@ -156,7 +156,7 @@ async function sendOtpEmail(email: string, otpCode: string, type: 'VERIFY_EMAIL'
       </div>
       <p style="font-size:13px;color:#7A6A5A;margin-top:24px;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
       <hr style="border:none;border-top:1px solid rgba(139,90,43,0.15);margin:32px 0;" />
-      <p style="font-size:11px;color:#7A6A5A;">Royal Gems · Jaipur, Rajasthan, India</p>
+      <p style="font-size:11px;color:#7A6A5A;">Royal Gems • 13/H/29, Mayur Bhanj Road, Kolkata, 700023</p>
     </div>`;
   await transporter.sendMail({
     from: `"Royal Gems Concierge" <${process.env.EMAIL_USER}>`,
