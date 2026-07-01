@@ -838,14 +838,12 @@ app.post('/api/upload', isAdmin, upload.single('file'), async (req: Request, res
 app.post('/api/orders/create', isAuth, async (req: AuthRequest, res: Response) => {
   const { items, addressId, totalAmount } = req.body;
 
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    res.status(400).json({ error: 'Cart items are required' });
-    return;
-  }
-
   if (!process.env.PAYTM_MID || !process.env.PAYTM_MERCHANT_KEY) {
-    res.status(500).json({ error: 'Payment gateway not configured' });
-    return;
+    return res.status(503).json({
+      error: 'Checkout temporarily unavailable',
+      message:
+        'Online payment is not enabled yet. Please visit our Kolkata studio or contact us at royalgemskolkata@gmail.com to complete your purchase.',
+    });
   }
 
   try {
