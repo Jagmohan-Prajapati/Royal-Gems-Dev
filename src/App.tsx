@@ -14,6 +14,7 @@ import Contact from './pages/Contact.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import RefundPolicy from './pages/RefundPolicy.tsx';
 import ShippingPolicy from './pages/ShippingPolicy.tsx';
+import TermsAndConditions from './pages/TermsAndConditions.tsx';
 
 // Protected pages
 import Checkout from './pages/Checkout.tsx';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 
           {/* Secure Patrons Routes */}
           <Route element={<ProtectedRoute />}>
