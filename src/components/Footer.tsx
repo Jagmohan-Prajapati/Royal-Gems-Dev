@@ -69,8 +69,10 @@ export default function Footer() {
             {[
               { label: 'Our Legacy', to: '/about' },
               { label: 'Contact Us', to: '/contact' },
-              { label: 'Shipping & Returns', to: '/contact' },
-              { label: 'Privacy Policy', to: '/contact' },
+              { label: 'Shipping & Returns', to: '/shipping-policyt' },
+              { label: 'Privacy Policy', to: '/privacy-policyt' },
+          { label: 'Refund Policy', to: '/refund-policy' },
+          { label: 'Terms & Conditions', to: '/terms-and-conditions' },
             ].map(({ label, to }) => (
               <li key={label}>
                 <Link to={to} className="font-body text-[13px] text-white/60 hover:text-white transition-colors flex items-center gap-1.5 group">
