@@ -69,8 +69,8 @@ export default function Footer() {
             {[
               { label: 'Our Legacy', to: '/about' },
               { label: 'Contact Us', to: '/contact' },
-              { label: 'Shipping & Returns', to: '/shipping-policyt' },
-              { label: 'Privacy Policy', to: '/privacy-policyt' },
+              { label: 'Shipping & Returns', to: '/shipping-policy' },
+              { label: 'Privacy Policy', to: '/privacy-policy' },
           { label: 'Refund Policy', to: '/refund-policy' },
           { label: 'Terms & Conditions', to: '/terms-and-conditions' },
             ].map(({ label, to }) => (
